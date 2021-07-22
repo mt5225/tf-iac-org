@@ -41,3 +41,63 @@ module "ec2" {
     "Role"     = "cloudiac"
   }
 }
+
+module "acm" {
+  source  = "terraform-aws-modules/acm/aws"
+  version = "~> 3.0"
+
+  domain_name = "cloudiac.org"
+  zone_id     = "Z0688329235ZOA5FIEND9"
+
+  subject_alternative_names = [
+    "*.cloudiac.org",
+  ]
+
+  wait_for_validation = true
+
+  tags = {
+    Name = "cloudiac.org"
+  }
+}
+
+
+module "alb" {
+  source  = "terraform-aws-modules/alb/aws"
+  version = "~> 6.0"
+
+  name = "cloudiac-alb"
+
+  load_balancer_type = "application"
+
+  vpc_id          = var.vpc.vpc_id
+  subnets         = var.vpc.public_subnets
+  security_groups = [var.sg.lb]
+
+  target_groups = [
+    {
+      name_prefix      = "iac-"
+      backend_protocol = "HTTP"
+      backend_port     = 8080
+      target_type      = "instance"
+      targets = [
+        {
+          target_id = module.ec2.id[0]
+          port      = 8080
+        },
+      ]
+    }
+  ]
+
+  https_listeners = [
+    {
+      port               = 443
+      protocol           = "HTTPS"
+      certificate_arn    = module.acm.acm_certificate_arn
+      target_group_index = 0
+    }
+  ]
+
+  tags = {
+    Environment = "demo"
+  }
+}

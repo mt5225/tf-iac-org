@@ -18,8 +18,9 @@ module "lb_sg" {
   source = "../aws-base/terraform-aws-sg"
   vpc_id = module.vpc.vpc_id
   ingress_rules = [{
-    port        = 80
+    port        = 443
     cidr_blocks = ["0.0.0.0/0"]
+    description = "lb-https"
   }]
 }
 
@@ -28,12 +29,14 @@ module "websvr_sg" {
   vpc_id = module.vpc.vpc_id
   ingress_rules = [
     {
-      port        = 443
-      cidr_blocks = ["0.0.0.0/0"]
+      port        = 8080
+      cidr_blocks = module.vpc.public_subnets_cidr_blocks
+      description = "iac-8080"
     },
     {
       port        = 22
       cidr_blocks = ["0.0.0.0/0"]
+      description = "iac-ssh"
     }
   ]
 }
@@ -44,5 +47,6 @@ module "db_sg" {
   ingress_rules = [{
     port            = 3306
     security_groups = [module.websvr_sg.security_group.id]
+    description     = "iac-db"
   }]
 }
