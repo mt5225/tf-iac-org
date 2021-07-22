@@ -20,12 +20,24 @@ module "dns-records" {
 
   records = [
     {
-      name = "demo"
+      name = "iac01"
       type = "A"
       ttl  = 3600
       records = [
         module.cloudiac.public_ip
       ]
+    },
+    {
+      name           = "demo"
+      type           = "CNAME"
+      ttl            = 5
+      set_identifier = "iac-lb"
+      records = [
+        module.cloudiac.lb_dns_name
+      ]
+      weighted_routing_policy = {
+        weight = 100
+      }
     },
   ]
 }
